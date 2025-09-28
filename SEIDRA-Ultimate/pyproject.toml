@@ -21,6 +21,7 @@ dependencies = [
     "pillow>=10.1,<11",
     "prometheus-client>=0.18,<0.21",
     "psutil>=5.9,<6",
+    "psycopg[binary]>=3.1,<4",
     "pydantic-settings>=2.0,<3",
     "python-dotenv>=1,<2",
     "python-multipart>=0.0.6,<0.0.8",
