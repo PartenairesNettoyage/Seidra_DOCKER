@@ -1,0 +1,120 @@
+version: "3.9"
+
+services:
+  reverse-proxy:
+    image: nginx:1.25-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./SEIDRA-Ultimate/deploy/nginx/ultimate.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+
+  backend:
+    build:
+      context: ./SEIDRA-Ultimate/backend
+      dockerfile: Dockerfile
+    env_file:
+      - .env.docker
+    environment:
+      SEIDRA_ENV: production
+      SEIDRA_DEBUG: "false"
+      SEIDRA_ALLOW_SYSTEM_FALLBACK: "false"
+    volumes:
+      - seidra-data:/data
+    depends_on:
+      redis:
+        condition: service_started
+      minio:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  worker:
+    build:
+      context: ./SEIDRA-Ultimate/backend
+      dockerfile: Dockerfile
+    command: celery -A workers.celery_app worker --loglevel=info
+    env_file:
+      - .env.docker
+    volumes:
+      - seidra-data:/data
+    depends_on:
+      redis:
+        condition: service_started
+      backend:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+
+  beat:
+    build:
+      context: ./SEIDRA-Ultimate/backend
+      dockerfile: Dockerfile
+    command: celery -A workers.celery_app beat --loglevel=info
+    env_file:
+      - .env.docker
+    volumes:
+      - seidra-data:/data
+    depends_on:
+      redis:
+        condition: service_started
+      backend:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./SEIDRA-Ultimate/frontend
+      dockerfile: Dockerfile
+    environment:
+      NEXT_PUBLIC_API_URL: /api
+    depends_on:
+      backend:
+        condition: service_started
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:RELEASE.2023-11-20T22-40-07Z
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: seidra
+      POSTGRES_USER: seidra
+      POSTGRES_PASSWORD: seidra
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U seidra"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  seidra-data:
+  minio-data:
+  pg-data:

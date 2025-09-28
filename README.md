@@ -45,6 +45,24 @@ SEIDRA Ultimate est la distribution « build your own myth » de SEIDRA : un 
 
 > 💡 Pour une installation native « one-click » incluant la création des scripts `start-backend.*`, `start-frontend.*` et `start-seidra.*`, utilisez `install-linux.sh` ou `install-windows.bat` selon votre OS.【F:SEIDRA-Ultimate/install-linux.sh†L320-L410】【F:SEIDRA-Ultimate/install-windows.bat†L180-L245】
 
+## 🐳 Exécution complète via Docker Compose
+1. **Préparer les variables d'environnement**
+   ```bash
+   cp .env.docker.example .env.docker
+   ```
+   Modifiez au besoin les secrets ou URLs d'accès avant de démarrer la stack (le fichier pointe déjà vers Postgres, Redis et MinIO conteneurisés).
+2. **Construire et lancer l'ensemble des services**
+   ```bash
+   docker compose up --build
+   ```
+   L'interface Ultimate est ensuite disponible sur [http://localhost:8080](http://localhost:8080), MinIO Console sur `http://localhost:9001` et l'API FastAPI sur `http://localhost:8080/api` via le proxy Nginx.
+3. **Surveiller ou arrêter les services**
+   ```bash
+   docker compose logs -f backend   # suivi temps réel
+   docker compose down              # arrêt + libération des conteneurs
+   ```
+   Les volumes `seidra-data`, `pg-data` et `minio-data` conservent données applicatives, base et objets MinIO entre deux exécutions.
+
 ## 🔐 Authentification & API
 - Les endpoints critiques (`/api/generate`, `/api/media`, `/api/system/*`) sont protégés par JWT et exposent des politiques de rate-limiting via `SlowAPIMiddleware` + Redis.【F:SEIDRA-Ultimate/backend/main.py†L118-L205】【F:SEIDRA-Ultimate/backend/api/middleware.py†L1-L74】
 - Générez un token avec les utilitaires backend (`scripts/rotate-default-user.py`, endpoints `/api/auth/login`) ou via les exemples `curl` fournis dans `docs/api/`.

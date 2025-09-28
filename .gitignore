@@ -1,0 +1,6 @@
+# Fichiers d'environnement locaux
+.env.docker
+.env
+
+# Répertoires temporaires
+__pycache__/
