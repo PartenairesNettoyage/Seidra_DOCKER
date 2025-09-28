@@ -13,13 +13,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copie des fichiers nécessaires à l'installation des dépendances
 COPY pyproject.toml ./
-COPY backend/requirements-dev.txt ./backend/requirements-dev.txt
+COPY backend ./backend
 
 RUN pip install --upgrade pip \
-    && pip install -r backend/requirements-dev.txt
-
-# Copie du code de l'application
-COPY backend ./backend
+    && cd backend \
+    && pip install -r requirements-dev.txt
 
 WORKDIR /app/backend
 
