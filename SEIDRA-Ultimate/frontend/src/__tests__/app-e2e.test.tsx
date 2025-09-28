@@ -41,7 +41,7 @@ vi.mock('@/components/onboarding/onboarding-wizard', () => ({
     <div data-testid="onboarding" data-open={String(isOpen)}>
       {isOpen ? 'Onboarding ouvert' : 'Onboarding fermé'}
       <button onClick={onClose} type="button">
-        Fermer l'onboarding
+        Fermer l&apos;onboarding
       </button>
     </div>
   ),
