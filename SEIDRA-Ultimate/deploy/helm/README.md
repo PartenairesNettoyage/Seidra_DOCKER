@@ -20,7 +20,7 @@ Les commandes suivantes construisent les images backend et frontend avec les mê
 
 ```bash
 # Backend
-docker buildx build backend \
+docker buildx build . \
   --file backend/Dockerfile \
   --tag "${SEIDRA_REGISTRY}/ultimate-backend:${SEIDRA_TAG}" \
   --tag "${SEIDRA_REGISTRY}/ultimate-backend:latest" \

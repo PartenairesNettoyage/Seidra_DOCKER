@@ -31,7 +31,7 @@ export SEIDRA_REGISTRY="ghcr.io/<organisation>/<repo>"
 export SEIDRA_TAG="dryrun-$(date +%s)"
 
 # Construire et charger les images dans Docker
-docker buildx build backend \
+docker buildx build . \
   --file backend/Dockerfile \
   --platform linux/amd64 \
   --tag "${SEIDRA_REGISTRY}/ultimate-backend:${SEIDRA_TAG}" \
