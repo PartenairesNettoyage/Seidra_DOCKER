@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copie des fichiers nécessaires à l'installation des dépendances
-COPY pyproject.toml README.md ./
+COPY pyproject.toml ./
 COPY backend/requirements-dev.txt ./backend/requirements-dev.txt
 
 RUN pip install --upgrade pip \
