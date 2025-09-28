@@ -168,6 +168,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+ensure_runtime_directories(settings)
 app.mount("/media", StaticFiles(directory=settings.media_directory), name="media")
 
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
