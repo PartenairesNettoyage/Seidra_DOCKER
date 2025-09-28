@@ -58,12 +58,6 @@ export function JobMonitor() {
     applyFilters({ status: undefined, persona_id: undefined, search: undefined, offset: 0 })
   }
 
-  useEffect(() => {
-    const updates = Object.values(jobUpdates)
-    if (updates.length === 0) return
-    setJobs((previous) => mergeJobUpdates(previous, updates))
-  }, [jobUpdates])
-
   return (
     <section className="space-y-6">
       <div className="rounded-2xl border border-purple-500/30 bg-black/40 p-6 text-purple-100 shadow-xl">
