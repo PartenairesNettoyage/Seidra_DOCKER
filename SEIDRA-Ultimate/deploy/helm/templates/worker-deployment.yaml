@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seidra-worker
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  selector:
+    matchLabels:
+      app: seidra-worker
+  template:
+    metadata:
+      labels:
+        app: seidra-worker
+    spec:
+      containers:
+        - name: worker
+          image: {{ .Values.image.repository }}/ultimate-backend:{{ .Values.image.tag }}
+          command: ["celery", "-A", "workers.celery_app", "worker", "--loglevel=info"]
+          {{- if or .Values.configMap.enabled .Values.secrets.enabled }}
+          envFrom:
+            {{- if .Values.configMap.enabled }}
+            - configMapRef:
+                name: {{ .Values.configMap.name }}
+            {{- end }}
+            {{- if .Values.secrets.enabled }}
+            - secretRef:
+                name: {{ .Values.secrets.name }}
+            {{- end }}
+          {{- end }}
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: "{{ $value }}"
+            {{- end }}

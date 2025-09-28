@@ -1,0 +1,400 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* SEIDRA Global Styles - Mystical Theme */
+
+:root {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 240 5.9% 10%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 240 4.9% 83.9%;
+  --radius: 0.75rem;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  color: hsl(var(--foreground));
+  background: linear-gradient(135deg, #2D1B69 0%, #0F0A1E 50%, #0A0614 100%);
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-feature-settings: 'cv11', 'ss01';
+  font-variation-settings: 'opsz' 32;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(45, 27, 105, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #FFD700, #E6C200);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #E6C200, #CCAD00);
+}
+
+/* SEIDRA Mystical Components */
+
+.seidra-logo {
+  filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
+  transition: all 0.3s ease;
+}
+
+.seidra-logo:hover {
+  filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.8));
+  transform: scale(1.05);
+}
+
+.seidra-mystical-border {
+  position: relative;
+  overflow: hidden;
+}
+
+.seidra-mystical-border::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent);
+  animation: mystical-shimmer 2s linear infinite;
+}
+
+.seidra-floating-particles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.seidra-particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: #FFD700;
+  border-radius: 50%;
+  opacity: 0.6;
+  animation: mystical-float 6s ease-in-out infinite;
+}
+
+.seidra-particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+.seidra-particle:nth-child(2) { left: 20%; animation-delay: 1s; }
+.seidra-particle:nth-child(3) { left: 30%; animation-delay: 2s; }
+.seidra-particle:nth-child(4) { left: 40%; animation-delay: 3s; }
+.seidra-particle:nth-child(5) { left: 50%; animation-delay: 4s; }
+.seidra-particle:nth-child(6) { left: 60%; animation-delay: 5s; }
+.seidra-particle:nth-child(7) { left: 70%; animation-delay: 0.5s; }
+.seidra-particle:nth-child(8) { left: 80%; animation-delay: 1.5s; }
+.seidra-particle:nth-child(9) { left: 90%; animation-delay: 2.5s; }
+
+/* Generation Progress Styles */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
+  }
+  50% {
+    background-position: 100% 50%;
+    box-shadow: 0 0 18px rgba(255, 215, 0, 0.35);
+  }
+  100% {
+    background-position: 0% 50%;
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.2);
+  }
+}
+
+.seidra-progress-bar {
+  position: relative;
+  background: linear-gradient(90deg, #FFD700, #E6C200, #FFD700);
+  background-size: 200% 100%;
+  animation: gradient-shift 2s ease infinite;
+}
+
+.seidra-progress-bar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.seidra-progress-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.45), transparent 60%);
+  mix-blend-mode: screen;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+@keyframes seidra-progress-stripes {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 200% 0%;
+  }
+}
+
+.seidra-progress-active::before {
+  background-image: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0.05) 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.05) 75%,
+    rgba(255, 255, 255, 0.28) 100%
+  );
+  background-size: 200% 100%;
+  animation: seidra-progress-stripes 1.4s linear infinite;
+  mix-blend-mode: screen;
+}
+
+@keyframes seidra-progress-waiting-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+.seidra-progress-waiting {
+  animation: gradient-shift 3s ease infinite, seidra-progress-waiting-pulse 1.8s ease-in-out infinite;
+}
+
+.seidra-generation-card {
+  background: rgba(45, 27, 105, 0.2);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.seidra-generation-card:hover {
+  border-color: rgba(255, 215, 0, 0.5);
+  box-shadow: 0 10px 40px rgba(255, 215, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Image Gallery Styles */
+.seidra-image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.seidra-image-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: rgba(45, 27, 105, 0.15);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.seidra-image-card:hover {
+  border-color: rgba(255, 215, 0, 0.4);
+  box-shadow: 0 15px 35px rgba(255, 215, 0, 0.15);
+  transform: translateY(-5px);
+}
+
+.seidra-image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 60%,
+    rgba(0, 0, 0, 0.8) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.seidra-image-card:hover .seidra-image-overlay {
+  opacity: 1;
+}
+
+/* Persona Card Styles */
+.seidra-persona-card {
+  background: rgba(45, 27, 105, 0.2);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 16px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.seidra-persona-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #FFD700, #E6C200, #FFD700);
+  background-size: 200% 100%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+.seidra-persona-card:hover {
+  border-color: rgba(255, 215, 0, 0.4);
+  box-shadow: 0 20px 40px rgba(255, 215, 0, 0.1);
+  transform: translateY(-3px);
+}
+
+/* Form Styles */
+.seidra-input {
+  background: rgba(45, 27, 105, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  color: #FFFFFF;
+  transition: all 0.3s ease;
+}
+
+.seidra-input:focus {
+  border-color: rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+  outline: none;
+}
+
+.seidra-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Button Animations */
+.seidra-button-mystical {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #FFD700, #E6C200);
+  color: #2D1B69;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.seidra-button-mystical::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.seidra-button-mystical:hover::before {
+  left: 100%;
+}
+
+.seidra-button-mystical:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);
+}
+
+/* Loading Animations */
+.seidra-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 215, 0, 0.2);
+  border-top: 3px solid #FFD700;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.seidra-loading-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.seidra-loading-dot {
+  width: 8px;
+  height: 8px;
+  background: #FFD700;
+  border-radius: 50%;
+  animation: mystical-pulse 1.5s ease-in-out infinite;
+}
+
+.seidra-loading-dot:nth-child(1) { animation-delay: 0s; }
+.seidra-loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.seidra-loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .seidra-image-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .seidra-mystical-border {
+    border-radius: 8px;
+  }
+  
+  .seidra-persona-card {
+    border-radius: 12px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .seidra-glass {
+    background: rgba(0, 0, 0, 0.8);
+    border-color: #FFD700;
+  }
+  
+  .seidra-input {
+    background: rgba(0, 0, 0, 0.9);
+    border-color: #FFD700;
+  }
+}

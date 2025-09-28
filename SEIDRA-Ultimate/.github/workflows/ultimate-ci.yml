@@ -1,0 +1,339 @@
+name: Ultimate CI
+
+on:
+  push:
+    branches: ["main", "develop"]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "deploy/**"
+      - "scripts/**"
+      - "Makefile"
+      - "pyproject.toml"
+      - "pre-commit-config.yaml"
+  pull_request:
+    branches: ["main", "develop"]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "deploy/**"
+      - "scripts/**"
+      - "Makefile"
+      - "pyproject.toml"
+      - "pre-commit-config.yaml"
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements-dev.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements-dev.txt
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run QA suite
+        id: qa
+        env:
+          QA_ARTIFACT_NAME: ultimate-qa-reports
+        run: ./scripts/ci-report.sh
+
+      - name: Upload QA reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.qa.outputs.artifact-name }}
+          path: ${{ steps.qa.outputs.artifact-path }}
+          if-no-files-found: error
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: frontend-build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Installer Playwright et dépendances systèmes
+        working-directory: frontend
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests
+        working-directory: frontend
+        run: npm run test:e2e
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-e2e-artifacts
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: warn
+
+  helm-dry-run:
+    name: Helm dry-run
+    runs-on: ubuntu-latest
+    needs:
+      - qa
+      - frontend-build
+    permissions:
+      contents: read
+      packages: write
+
+  load-test:
+    name: Tests de charge
+    runs-on: ubuntu-latest
+    needs: qa
+    if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && secrets.SEIDRA_API_URL != '' && secrets.SEIDRA_JWT != '' }}
+    timeout-minutes: 30
+    env:
+      SEIDRA_API_URL: ${{ secrets.SEIDRA_API_URL }}
+      SEIDRA_JWT: ${{ secrets.SEIDRA_JWT }}
+      REPORT_BASENAME: ci_loadtest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Préparer Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Préparer les variables d'image
+        run: |
+          echo "REGISTRY_OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+          echo "REGISTRY=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+          echo "IMAGE_TAG=${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "BACKEND_IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/ultimate-backend:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "FRONTEND_IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/ultimate-frontend:${GITHUB_SHA}" >> "$GITHUB_ENV"
+        env:
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GITHUB_SHA: ${{ github.sha }}
+
+      - name: Connexion à GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Construire l'image backend
+        env:
+          BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}
+        run: |
+          set -o pipefail
+          docker buildx build backend \
+            --file backend/Dockerfile \
+            --platform linux/amd64 \
+            --tag "${BACKEND_IMAGE}" \
+            --load \
+            --progress plain | tee backend-build.log
+
+      - name: Construire l'image frontend
+        env:
+          FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}
+        run: |
+          set -o pipefail
+          docker buildx build frontend \
+            --file frontend/Dockerfile \
+            --platform linux/amd64 \
+            --tag "${FRONTEND_IMAGE}" \
+            --load \
+            --progress plain | tee frontend-build.log
+
+      - name: Créer le cluster kind éphémère
+        run: kind create cluster --name seidra-ci --wait 120s
+
+      - name: Charger les images dans kind
+        env:
+          BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}
+          FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}
+        run: |
+          kind load docker-image --name seidra-ci "${BACKEND_IMAGE}"
+          kind load docker-image --name seidra-ci "${FRONTEND_IMAGE}"
+
+      - name: Installer Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.13.3
+
+      - name: Mettre à jour les dépendances Helm
+        run: helm dependency update deploy/helm
+
+      - name: Lint du chart Helm
+        run: helm lint deploy/helm
+
+      - name: Dry-run Helm --debug
+        env:
+          REGISTRY: ${{ env.REGISTRY }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+        run: |
+          set -o pipefail
+          helm upgrade --install seidra-ultimate deploy/helm \
+            --namespace seidra-ci \
+            --create-namespace \
+            --set image.repository="${REGISTRY}" \
+            --set image.tag="${IMAGE_TAG}" \
+            --dry-run --debug | tee helm-dry-run.log
+
+      - name: Vérifier les ressources critiques
+        run: |
+          grep -q "kind: ConfigMap" helm-dry-run.log
+          grep -q "name: seidra-config" helm-dry-run.log
+          grep -q "kind: Secret" helm-dry-run.log
+          grep -q "name: seidra-secrets" helm-dry-run.log
+
+      - name: Supprimer le cluster kind
+        if: always()
+        run: kind delete cluster --name seidra-ci
+
+      - name: Publier les logs dry-run
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: helm-dry-run-logs
+          path: |
+            backend-build.log
+            frontend-build.log
+            helm-dry-run.log
+
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Préparer le répertoire des rapports
+        run: |
+          rm -rf reports/perf
+          mkdir -p reports/perf
+
+      - name: Lancer les tests de charge
+        run: make loadtest
+        timeout-minutes: 15
+        env:
+          USERS: ${{ vars.LOADTEST_USERS || '20' }}
+          SPAWN_RATE: ${{ vars.LOADTEST_SPAWN_RATE || '5' }}
+          RUN_TIME: ${{ vars.LOADTEST_RUN_TIME || '5m' }}
+
+      - name: Vérifier les seuils de performance
+        env:
+          MIN_SUCCESS_RATE: ${{ vars.LOADTEST_MIN_SUCCESS_RATE || '95' }}
+          MAX_AVG_RESPONSE: ${{ vars.LOADTEST_MAX_AVG_RESPONSE || '2000' }}
+        run: |
+          python - <<'PY'
+          import csv
+          import os
+          from pathlib import Path
+
+          reports_dir = Path("reports/perf")
+          basename = os.environ.get("REPORT_BASENAME", "seidra_loadtest")
+          stats_path = reports_dir / f"{basename}_stats.csv"
+
+          if not stats_path.exists():
+              raise FileNotFoundError(f"Fichier de statistiques introuvable: {stats_path}")
+
+          aggregated = None
+          with stats_path.open(newline="", encoding="utf-8") as handle:
+              reader = csv.DictReader(handle)
+              for row in reader:
+                  if row.get("Name") in {"Aggregated", "Total"}:
+                      aggregated = row
+                      break
+
+          if aggregated is None:
+              raise RuntimeError("Impossible de récupérer les statistiques agrégées du test de charge.")
+
+          def to_float(value: str | None) -> float:
+              if not value:
+                  return 0.0
+              try:
+                  return float(value)
+              except ValueError:
+                  return 0.0
+
+          requests = to_float(aggregated.get("Requests"))
+          failures = to_float(aggregated.get("Failures"))
+          avg_response = to_float(aggregated.get("Average Response Time"))
+          success_rate = 0.0 if requests == 0 else (requests - failures) / requests * 100
+
+          min_success = float(os.environ.get("MIN_SUCCESS_RATE", "95"))
+          max_avg_response = float(os.environ.get("MAX_AVG_RESPONSE", "2000"))
+
+          print(f"Taux de réussite observé: {success_rate:.2f}% (seuil >= {min_success}%)")
+          print(f"Temps de réponse moyen observé: {avg_response:.2f} ms (seuil <= {max_avg_response} ms)")
+
+          errors = []
+          if success_rate < min_success:
+              errors.append("Le taux de réussite est inférieur au seuil attendu.")
+          if avg_response > max_avg_response:
+              errors.append("Le temps de réponse moyen dépasse le seuil attendu.")
+
+          if errors:
+              raise SystemExit("\n".join(errors))
+          PY
+
+      - name: Archiver les rapports de charge
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapports-loadtest
+          path: reports/perf
+          if-no-files-found: error
+

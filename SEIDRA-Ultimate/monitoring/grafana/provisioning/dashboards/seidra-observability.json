@@ -1,0 +1,232 @@
+{
+  "id": null,
+  "uid": "seidra-observability",
+  "title": "SEIDRA Ultimate - Observabilité",
+  "tags": ["seidra", "ultimate"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "type": "row",
+      "title": "GPU",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false
+    },
+    {
+      "type": "timeseries",
+      "title": "Utilisation GPU (%)",
+      "id": 1,
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "PROMETHEUS" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 80 },
+              { "color": "red", "value": 90 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg by (gpu)(seidra_gpu_utilization)"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Température GPU (°C)",
+      "id": 2,
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "PROMETHEUS" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 75 },
+              { "color": "red", "value": 85 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max by (gpu)(seidra_gpu_temperature_celsius)"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Jobs",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 10 },
+      "collapsed": false
+    },
+    {
+      "type": "stat",
+      "title": "Jobs Celery actifs",
+      "id": 3,
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 11 },
+      "datasource": { "type": "prometheus", "uid": "PROMETHEUS" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(celery_tasks_active)"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Durée p95 des jobs (s)",
+      "id": 4,
+      "gridPos": { "h": 9, "w": 9, "x": 6, "y": 11 },
+      "datasource": { "type": "prometheus", "uid": "PROMETHEUS" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "red", "value": 60 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum(rate(celery_task_runtime_seconds_bucket[5m])) by (le))"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "title": "Temps d'attente par file",
+      "id": 5,
+      "gridPos": { "h": 9, "w": 9, "x": 15, "y": 11 },
+      "datasource": { "type": "prometheus", "uid": "PROMETHEUS" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "avg by (queue)(seidra_job_waiting_seconds)",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Notifications",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+      "collapsed": false
+    },
+    {
+      "type": "state-timeline",
+      "title": "Alertes actives",
+      "id": 6,
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 21 },
+      "datasource": { "type": "prometheus", "uid": "PROMETHEUS" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "fillOpacity": 70,
+            "lineWidth": 0
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "ALERTS{alertstate=\"firing\"}",
+          "legendFormat": "{{alertname}}"
+        }
+      ]
+    },
+    {
+      "type": "logs",
+      "title": "Flux Loki - backend",
+      "id": 7,
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 21 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "options": {
+        "dedupStrategy": "none",
+        "showLabels": false,
+        "showTime": true,
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{job=\"containers\", compose_service=\"backend\"}"
+        }
+      ]
+    },
+    {
+      "type": "trace",
+      "title": "Requêtes récentes",
+      "id": 8,
+      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 28 },
+      "datasource": { "type": "tempo", "uid": "TEMPO" },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "{}",
+          "queryType": "traceql"
+        }
+      ]
+    }
+  ],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  }
+}

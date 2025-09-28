@@ -1,0 +1,96 @@
+ingress:
+  enabled: false
+
+adminUser: admin
+adminPassword: ${GRAFANA_ADMIN_PASSWORD:-ChangeMe123!}
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus-server.observability.svc.cluster.local
+        isDefault: true
+        jsonData:
+          timeInterval: 15s
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://loki.observability.svc.cluster.local:3100
+      - name: Tempo
+        type: tempo
+        access: proxy
+        url: http://tempo.observability.svc.cluster.local:3200
+        jsonData:
+          tracesToLogs:
+            datasourceUid: LOKI
+            mapTagNamesEnabled: true
+            tags:
+              - key: service.name
+          serviceMap:
+            datasourceUid: PROMETHEUS
+
+sidecar:
+  dashboards:
+    enabled: true
+    label: grafana_dashboard
+    labelValue: seidra
+    folder: "SEIDRA Ultimate"
+    searchNamespace: ALL
+    provider:
+      name: seidra-dashboards
+      orgid: 1
+      folder: "SEIDRA Ultimate"
+      type: file
+      disableDeletion: false
+      options:
+        path: /var/lib/grafana/dashboards
+  datasources:
+    enabled: false
+
+extraInitContainers:
+  - name: import-dashboards
+    image: busybox:1.36
+    command:
+      - sh
+      - -c
+      - |
+        mkdir -p /var/lib/grafana/dashboards
+        cp -r /seidra-dashboards/* /var/lib/grafana/dashboards/
+    volumeMounts:
+      - name: seidra-grafana-dashboards
+        mountPath: /seidra-dashboards
+
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      - name: "seidra"
+        orgId: 1
+        folder: "SEIDRA Ultimate"
+        type: file
+        disableDeletion: false
+        options:
+          path: /var/lib/grafana/dashboards
+
+persistence:
+  enabled: true
+  size: 10Gi
+
+extraVolumes:
+  - name: seidra-grafana-dashboards
+    configMap:
+      name: seidra-grafana-dashboards
+  - name: seidra-grafana-alerting
+    configMap:
+      name: seidra-grafana-alerting
+
+extraVolumeMounts:
+  - name: seidra-grafana-dashboards
+    mountPath: /seidra-dashboards
+    readOnly: true
+  - name: seidra-grafana-alerting
+    mountPath: /etc/grafana/provisioning/alerting
+    readOnly: true

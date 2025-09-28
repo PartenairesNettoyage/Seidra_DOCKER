@@ -1,0 +1,49 @@
+server:
+  persistentVolume:
+    enabled: true
+    size: 20Gi
+  extraConfigmapMounts:
+    - name: seidra-prometheus-config
+      mountPath: /etc/prometheus/custom
+      configMap: seidra-prometheus-config
+      readOnly: true
+  configMapOverrideName: seidra-prometheus-config
+  retention: 15d
+
+alertmanager:
+  enabled: false
+
+kubeStateMetrics:
+  enabled: false
+
+nodeExporter:
+  enabled: false
+
+pushgateway:
+  enabled: false
+
+extraScrapeConfigs: |
+  - job_name: seidra-backend
+    metrics_path: /metrics
+    scrape_interval: 15s
+    static_configs:
+      - targets:
+          - seidra-backend.default.svc.cluster.local:8000
+  - job_name: seidra-worker
+    metrics_path: /metrics
+    scrape_interval: 15s
+    static_configs:
+      - targets:
+          - seidra-worker.default.svc.cluster.local:8000
+  - job_name: flower
+    metrics_path: /metrics
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - flower.default.svc.cluster.local:5555
+  - job_name: tempo
+    metrics_path: /metrics
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - tempo.observability.svc.cluster.local:3200

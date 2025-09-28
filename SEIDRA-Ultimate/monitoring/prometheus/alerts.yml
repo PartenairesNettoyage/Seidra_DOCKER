@@ -1,0 +1,27 @@
+groups:
+  - name: seidra-ultimate
+    rules:
+      - alert: BackendDown
+        expr: up{job="seidra-backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API Ultimate indisponible"
+          description: "Le job seidra-backend ne répond plus depuis 2 minutes."
+      - alert: HighJobLatency
+        expr: histogram_quantile(0.95, sum(rate(celery_task_runtime_seconds_bucket[5m])) by (le)) > 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Jobs IA lents"
+          description: "Les tâches Celery dépassent 30s au 95e percentile."
+      - alert: GPUOverheating
+        expr: seidra_gpu_temperature_celsius > 80
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Température GPU élevée"
+          description: "Un GPU dépasse 80°C sur l'infrastructure Ultimate."

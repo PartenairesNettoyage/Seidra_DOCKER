@@ -1,0 +1,51 @@
+image:
+  repository: ghcr.io/seidra
+  tag: latest
+
+configMap:
+  enabled: true
+  name: seidra-config
+  data:
+    APP_ENV: production
+
+secrets:
+  enabled: true
+  name: seidra-secrets
+  data:
+    SEIDRA_SECRET_KEY: change-me
+    SEIDRA_DATABASE_PASSWORD: change-me
+
+backend:
+  replicaCount: 2
+  resources:
+    limits:
+      cpu: "2"
+      memory: 4Gi
+    requests:
+      cpu: "1"
+      memory: 2Gi
+
+frontend:
+  replicaCount: 2
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: "250m"
+      memory: 512Mi
+
+worker:
+  replicaCount: 2
+
+minio:
+  endpoint: http://seidra-minio:9000
+  bucket: seidra-media
+
+env:
+  SEIDRA_ENV: production
+  SEIDRA_DEBUG: "false"
+  SEIDRA_REDIS_URL: redis://seidra-redis:6379/0
+  SEIDRA_CELERY_BROKER: redis://seidra-redis:6379/1
+  SEIDRA_CELERY_BACKEND: redis://seidra-redis:6379/2
+  SEIDRA_ALLOW_SYSTEM_FALLBACK: "false"

@@ -1,0 +1,28 @@
+loki:
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClassName: null
+  auth_enabled: false
+  config:
+    table_manager:
+      retention_deletes_enabled: true
+      retention_period: 168h
+
+promtail:
+  enabled: true
+  config:
+    clients:
+      - url: http://loki:3100/loki/api/v1/push
+    snippets:
+      pipelineStages:
+        - docker: {}
+        - cri: {}
+        - match:
+            selector: '{namespace="default"}'
+            stages:
+              - regex:
+                  expression: "(?P<level>INFO|ERROR|WARNING|DEBUG)"
+              - labels:
+                  level:
+                    action: replace

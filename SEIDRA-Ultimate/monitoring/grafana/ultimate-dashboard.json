@@ -1,0 +1,113 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "9.5.0" },
+    { "type": "panel", "id": "timeseries", "name": "Time series", "version": "9.5.0" }
+  ],
+  "title": "SEIDRA Ultimate - Observabilité",
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Utilisation GPU",
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "PROMETHEUS" },
+          "expr": "seidra_gpu_utilization{instance=\"backend\"}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Temps de réponse API",
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "PROMETHEUS" },
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{app=\"seidra-backend\"}[5m])) by (le))"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Jobs Celery actifs",
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "PROMETHEUS" },
+          "expr": "sum(celery_tasks_active{queue=\"generation\"})"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Temps moyen d'inférence (60 min)",
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" },
+        "orientation": "horizontal"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#7EB26D", "value": null },
+              { "color": "#EAB839", "value": 10 },
+              { "color": "#E24D42", "value": 20 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "infinity", "uid": "SEIDRA_API" },
+          "format": "table",
+          "queryType": "json",
+          "url": "/api/system/telemetry/generation?minutes=60",
+          "root_selector": "summary",
+          "columns": [
+            { "selector": "averageDurationSeconds", "text": "value" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "table",
+      "title": "Dernières générations",
+      "options": {
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "infinity", "uid": "SEIDRA_API" },
+          "format": "table",
+          "queryType": "json",
+          "url": "/api/system/telemetry/generation?limit=25",
+          "root_selector": "items",
+          "columns": [
+            { "selector": "createdAt", "text": "Horodatage" },
+            { "selector": "mediaType", "text": "Type" },
+            { "selector": "modelName", "text": "Modèle" },
+            { "selector": "durationSeconds", "text": "Durée (s)" },
+            { "selector": "throughput", "text": "Débit" },
+            { "selector": "vramPeakMb", "text": "VRAM max (MB)" },
+            { "selector": "outputs", "text": "Sorties" }
+          ]
+        }
+      ]
+    }
+  ],
+  "templating": { "list": [] }
+}

@@ -1,0 +1,117 @@
+version: "3.9"
+services:
+  backend:
+    image: python:3.11-slim
+    working_dir: /app/backend
+    command: bash -lc "pip install -r requirements-dev.txt && uvicorn main:app --host 0.0.0.0 --port 8000"
+    volumes:
+      - ./backend:/app/backend
+      - ./data:/app/data
+    environment:
+      - SEIDRA_ENV=development
+      - SEIDRA_DATABASE_URL=sqlite:////app/data/seidra.db
+      - SEIDRA_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+      - SEIDRA_ALLOW_SYSTEM_FALLBACK=true
+      - SEIDRA_REDIS_URL=redis://redis:6379/0
+      - SEIDRA_CELERY_BROKER=redis://redis:6379/1
+      - SEIDRA_CELERY_BACKEND=redis://redis:6379/2
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - minio
+  frontend:
+    image: node:18-alpine
+    working_dir: /app/frontend
+    command: sh -c "npm install && npm run dev"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    volumes:
+      - ./frontend:/app/frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+  minio:
+    image: minio/minio:RELEASE.2023-11-20T22-40-07Z
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: ${SEIDRA_MINIO_ROOT_USER:-seidra_minio}
+      MINIO_ROOT_PASSWORD: ${SEIDRA_MINIO_ROOT_PASSWORD:-change-me-minio}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+  comfyui:
+    image: ghcr.io/comfyanonymous/comfyui:latest
+    environment:
+      CLI_ARGS: ${COMFYUI_CLI_ARGS:---cpu}
+    ports:
+      - "8188:8188"
+  flower:
+    image: mher/flower:2.0
+    command: ["flower", "--port=5555", "--broker=redis://redis:6379/1"]
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-remote-write-receiver
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+  grafana:
+    image: grafana/grafana:10.3.3
+    environment:
+      GF_SECURITY_ADMIN_USER: ${SEIDRA_GRAFANA_ADMIN_USER:-seidra_admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${SEIDRA_GRAFANA_ADMIN_PASSWORD:-change-me-grafana}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+  loki:
+    image: grafana/loki:2.9.5
+    command: ["-config.file=/etc/loki/config.yml"]
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki/config.yml:/etc/loki/config.yml:ro
+      - loki-data:/var/loki
+  tempo:
+    image: grafana/tempo:2.3.1
+    command: ["-config.file=/etc/tempo/config.yml"]
+    ports:
+      - "3200:3200"
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - ./monitoring/tempo/config.yml:/etc/tempo/config.yml:ro
+      - tempo-data:/var/tempo
+  promtail:
+    image: grafana/promtail:2.9.5
+    command: ["-config.file=/etc/promtail/config.yml"]
+    volumes:
+      - ./monitoring/promtail/config.yml:/etc/promtail/config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/log:/var/log:ro
+    depends_on:
+      - loki
+volumes:
+  minio-data:
+  prometheus-data:
+  grafana-data:
+  loki-data:
+  tempo-data:

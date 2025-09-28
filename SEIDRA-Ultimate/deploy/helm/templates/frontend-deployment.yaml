@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seidra-frontend
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  selector:
+    matchLabels:
+      app: seidra-frontend
+  template:
+    metadata:
+      labels:
+        app: seidra-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: {{ .Values.image.repository }}/ultimate-frontend:{{ .Values.image.tag }}
+          {{- if or .Values.configMap.enabled .Values.secrets.enabled }}
+          envFrom:
+            {{- if .Values.configMap.enabled }}
+            - configMapRef:
+                name: {{ .Values.configMap.name }}
+            {{- end }}
+            {{- if .Values.secrets.enabled }}
+            - secretRef:
+                name: {{ .Values.secrets.name }}
+            {{- end }}
+          {{- end }}
+          env:
+            - name: NEXT_PUBLIC_API_URL
+              value: "/api"
+          ports:
+            - containerPort: 3000
+          resources: {{- toYaml .Values.frontend.resources | nindent 12 }}

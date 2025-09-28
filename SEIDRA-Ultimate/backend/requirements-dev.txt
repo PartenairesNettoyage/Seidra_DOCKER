@@ -1,0 +1,2 @@
+# Dépendances de développement synchronisées avec pyproject.toml
+-e ..[dev]

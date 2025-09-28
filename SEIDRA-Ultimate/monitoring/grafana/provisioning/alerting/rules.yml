@@ -1,0 +1,99 @@
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: seidra-runtime
+    folder: "SEIDRA Ultimate"
+    interval: 1m
+    rules:
+      - uid: cpu-overload
+        title: "CPU backend saturé"
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: PROMETHEUS
+            model:
+              datasource:
+                type: prometheus
+                uid: PROMETHEUS
+              editorMode: code
+              expr: max(seidra_system_cpu_percent)
+              format: time_series
+              interval: ""
+              intervalFactor: 2
+              legendFormat: CPU
+              range: true
+              refId: A
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "CPU saturé"
+          description: "L'utilisation CPU dépasse 90 % depuis plus de 5 minutes."
+        labels:
+          severity: warning
+        isPaused: false
+
+      - uid: gpu-temp-critical
+        title: "Température GPU critique"
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: PROMETHEUS
+            model:
+              datasource:
+                type: prometheus
+                uid: PROMETHEUS
+              editorMode: code
+              expr: max(seidra_gpu_temperature_celsius)
+              format: time_series
+              interval: ""
+              intervalFactor: 2
+              legendFormat: GPU
+              range: true
+              refId: A
+        noDataState: NoData
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: "GPU en surchauffe"
+          description: "La température GPU dépasse 85 °C."
+        labels:
+          severity: critical
+        isPaused: false
+
+      - uid: generation-latency
+        title: "Latence IA élevée"
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: PROMETHEUS
+            model:
+              datasource:
+                type: prometheus
+                uid: PROMETHEUS
+              editorMode: code
+              expr: histogram_quantile(0.95, sum(rate(celery_task_runtime_seconds_bucket[5m])) by (le))
+              format: time_series
+              interval: ""
+              intervalFactor: 2
+              legendFormat: "p95"
+              range: true
+              refId: A
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "Latence de génération élevée"
+          description: "Les tâches Celery dépassent 30 s au 95e percentile."
+        labels:
+          severity: warning
+        isPaused: false

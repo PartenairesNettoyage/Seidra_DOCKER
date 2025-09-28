@@ -1,0 +1,113 @@
+[project]
+name = "seidra-ultimate"
+version = "0.0.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110,<0.111",
+    "fastapi-limiter>=0.1.6,<0.2",
+    "httpx>=0.26,<0.27",
+    "email-validator>=2.1,<3",
+    "passlib[bcrypt]>=1.7,<1.8",
+    "PyYAML>=6,<7",
+    "pydantic>=2.5,<3",
+    "PyJWT>=2.8,<3",
+    "requests>=2.31,<3",
+    "SQLAlchemy>=2.0.23,<3",
+    "alembic>=1.12,<2",
+    "boto3>=1.28,<2",
+    "celery>=5.3,<5.4",
+    "chromadb>=0.4,<0.5",
+    "numpy>=1.24,<2",
+    "pillow>=10.1,<11",
+    "prometheus-client>=0.18,<0.21",
+    "psutil>=5.9,<6",
+    "pydantic-settings>=2.0,<3",
+    "python-dotenv>=1,<2",
+    "python-multipart>=0.0.6,<0.0.8",
+    "redis>=5.0.1,<6",
+    "requests>=2.31,<3",
+    "uvicorn[standard]>=0.24,<0.28",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=23.12,<25",
+    "coverage>=7.3,<8",
+    "locust>=2.15,<3",
+    "mypy>=1.7,<2",
+    "pre-commit>=3.6,<4",
+    "pytest>=7.4,<8",
+    "pytest-asyncio>=0.21,<0.22",
+    "ruff>=0.1.9,<0.3",
+    "tqdm>=4.66,<5",
+    "types-redis>=4.6,<5",
+]
+gpu = [
+    "accelerate>=0.25,<0.26",
+    "diffusers>=0.24,<0.25",
+    "GPUtil>=1.4,<2",
+    "huggingface-hub>=0.19,<0.21",
+    "librosa>=0.10,<0.11",
+    "opencv-python>=4.8,<5",
+    "pydub>=0.25,<0.27",
+    "safetensors>=0.4,<0.5",
+    "scikit-image>=0.22,<0.23",
+    "soundfile>=0.12,<0.13",
+    "torch>=2.1,<2.2",
+    "torchaudio>=2.1,<2.2",
+    "torch-tensorrt>=1.0,<2",
+    "torchvision>=0.16,<0.17",
+    "transformers>=4.35,<4.37",
+    "xformers>=0.0.23,<0.0.24",
+]
+
+[tool.setuptools]
+
+[tool.setuptools.packages.find]
+include = ["backend*"]
+
+[tool.setuptools.package-dir]
+backend = "backend"
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+include = "backend"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = ["alembic", "backend/services", "backend/workers"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+plugins = []
+ignore_missing_imports = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+strict_optional = true
+mypy_path = ["backend"]
+
+[tool.pytest.ini_options]
+pythonpath = ["backend"]
+addopts = "-ra"
+
+[tool.coverage.run]
+branch = true
+source = ["backend"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+force-sort-within-sections = true
+
+[tool.taskipy.tasks]
+check = "make check"

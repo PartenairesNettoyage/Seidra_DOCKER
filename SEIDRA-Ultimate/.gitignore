@@ -1,0 +1,17 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Node/Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/coverage/
+frontend/.turbo/
+
+# Reports
+reports/qa/frontend/
+
+# Misc
+*.tsbuildinfo
+.DS_Store
