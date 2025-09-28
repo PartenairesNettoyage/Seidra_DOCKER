@@ -15,8 +15,8 @@ services:
 
   backend:
     build:
-      context: ./SEIDRA-Ultimate/backend
-      dockerfile: Dockerfile
+      context: ./SEIDRA-Ultimate
+      dockerfile: backend/Dockerfile
     env_file:
       - .env.docker
     environment:
@@ -41,8 +41,8 @@ services:
 
   worker:
     build:
-      context: ./SEIDRA-Ultimate/backend
-      dockerfile: Dockerfile
+      context: ./SEIDRA-Ultimate
+      dockerfile: backend/Dockerfile
     command: celery -A workers.celery_app worker --loglevel=info
     env_file:
       - .env.docker
@@ -58,8 +58,8 @@ services:
 
   beat:
     build:
-      context: ./SEIDRA-Ultimate/backend
-      dockerfile: Dockerfile
+      context: ./SEIDRA-Ultimate
+      dockerfile: backend/Dockerfile
     command: celery -A workers.celery_app beat --loglevel=info
     env_file:
       - .env.docker
