@@ -41,7 +41,7 @@ vi.mock('@/components/onboarding/onboarding-wizard', () => ({
     <div data-testid="onboarding" data-open={String(isOpen)}>
       {isOpen ? 'Onboarding ouvert' : 'Onboarding fermé'}
       <button onClick={onClose} type="button">
-        Fermer l&apos;onboarding
+        Fermer l’onboarding
       </button>
     </div>
   ),
@@ -89,7 +89,7 @@ describe('Parcours bout-en-bout depuis la page d\'accueil', () => {
     const onboarding = await screen.findByTestId('onboarding')
     expect(onboarding).toHaveAttribute('data-open', 'true')
 
-    await user.click(screen.getByText("Fermer l'onboarding"))
+    await user.click(screen.getByText('Fermer l’onboarding'))
 
     await waitFor(() => {
       expect(screen.getByTestId('onboarding')).toHaveAttribute('data-open', 'false')
